@@ -1,5 +1,9 @@
 # soccer-sentiment-API-saas
-An example on how you can build an mvp saas in a day
+An example on building an mvp saas in a day. Testing out deploying an API as a service. This is part of a another project. It's only visible because I had to make it so in order to deploy on github pages. 
+
+This is not a serious app, but it works and I'm happy
+
+https://viukpe.github.io/soccer-sentiment-API-saas/
 
 ## API Endpoints
 Soccer Sentiment API — Endpoint Reference
