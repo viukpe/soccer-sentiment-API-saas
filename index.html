@@ -1,0 +1,1887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ScoutPulse — Soccer Sentiment Intelligence API</title>
+  <meta name="description" content="Real-time fan sentiment intelligence for soccer clubs, analysts, and media. Access structured sentiment data across leagues, teams, and seasons via a clean REST API." />
+
+  <!-- Bootstrap 5 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" />
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ─── TOKENS ─────────────────────────────────────────────── */
+    :root {
+      --bg:          #05080f;
+      --bg-2:        #0b1120;
+      --bg-3:        #101828;
+      --border:      #1a2540;
+      --border-2:    #243050;
+      --green:       #00e87a;
+      --green-dim:   rgba(0, 232, 122, 0.12);
+      --green-glow:  rgba(0, 232, 122, 0.35);
+      --amber:       #f5a623;
+      --amber-dim:   rgba(245, 166, 35, 0.12);
+      --red:         #ff4757;
+      --red-dim:     rgba(255, 71, 87, 0.12);
+      --text:        #e8edf5;
+      --text-2:      #8896b3;
+      --text-3:      #4d607f;
+      --display:     'Bebas Neue', sans-serif;
+      --body:        'Sora', sans-serif;
+      --mono:        'JetBrains Mono', monospace;
+    }
+
+    /* ─── BASE ───────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--body);
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    ::selection { background: var(--green); color: #000; }
+
+    /* ─── SCROLLBAR ───────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 99px; }
+
+    /* ─── TYPOGRAPHY ─────────────────────────────────────────── */
+    .display-font { font-family: var(--display); }
+    .mono-font    { font-family: var(--mono); }
+
+    h1, h2, h3, h4 { font-family: var(--body); font-weight: 700; }
+
+    .hero-headline {
+      font-family: var(--display);
+      font-size: clamp(3.5rem, 9vw, 8rem);
+      line-height: 0.92;
+      letter-spacing: 0.01em;
+      color: var(--text);
+    }
+
+    .hero-headline span {
+      color: var(--green);
+      position: relative;
+      display: inline-block;
+    }
+
+    .section-eyebrow {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--green);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .section-eyebrow::before {
+      content: '';
+      display: block;
+      width: 20px;
+      height: 2px;
+      background: var(--green);
+    }
+
+    .section-title {
+      font-family: var(--display);
+      font-size: clamp(2rem, 5vw, 3.8rem);
+      line-height: 1;
+      letter-spacing: 0.02em;
+    }
+
+    /* ─── NAV ─────────────────────────────────────────────────── */
+    .sp-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      padding: 1rem 0;
+      transition: background 0.3s, border-bottom 0.3s, backdrop-filter 0.3s;
+    }
+
+    .sp-nav.scrolled {
+      background: rgba(5, 8, 15, 0.92);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sp-logo {
+      font-family: var(--display);
+      font-size: 1.6rem;
+      letter-spacing: 0.05em;
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .sp-logo span { color: var(--green); }
+
+    .sp-nav-link {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-2);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .sp-nav-link:hover { color: var(--text); }
+
+    /* ─── BUTTONS ─────────────────────────────────────────────── */
+    .btn-primary-sp {
+      background: var(--green);
+      color: #000;
+      font-family: var(--body);
+      font-weight: 700;
+      font-size: 0.875rem;
+      padding: 0.75rem 1.75rem;
+      border: none;
+      border-radius: 6px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: transform 0.15s, box-shadow 0.15s;
+      cursor: pointer;
+    }
+
+    .btn-primary-sp:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px var(--green-glow);
+      color: #000;
+    }
+
+    .btn-ghost-sp {
+      background: transparent;
+      color: var(--text-2);
+      font-family: var(--body);
+      font-weight: 500;
+      font-size: 0.875rem;
+      padding: 0.75rem 1.75rem;
+      border: 1px solid var(--border-2);
+      border-radius: 6px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.15s;
+      cursor: pointer;
+    }
+
+    .btn-ghost-sp:hover {
+      color: var(--text);
+      border-color: var(--text-3);
+    }
+
+    /* ─── HERO ────────────────────────────────────────────────── */
+    .hero-section {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      position: relative;
+      padding: 7rem 0 5rem;
+      overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 70% 60% at 10% 60%, rgba(0, 232, 122, 0.07) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 40% at 85% 20%, rgba(245, 166, 35, 0.05) 0%, transparent 60%),
+        var(--bg);
+    }
+
+    .hero-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(26, 37, 64, 0.4) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(26, 37, 64, 0.4) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+    }
+
+    .hero-subtext {
+      font-size: 1.1rem;
+      color: var(--text-2);
+      line-height: 1.7;
+      max-width: 520px;
+    }
+
+    /* ─── LIVE BADGE ─────────────────────────────────────────── */
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(255, 71, 87, 0.12);
+      border: 1px solid rgba(255, 71, 87, 0.3);
+      color: var(--red);
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+    }
+
+    .live-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--red);
+      border-radius: 50%;
+      animation: pulse-red 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse-red {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.7); }
+    }
+
+    /* ─── SENTIMENT CARDS ────────────────────────────────────── */
+    .sentiment-panel {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .sentiment-panel::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--green-dim), transparent);
+    }
+
+    .panel-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .panel-title {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--text-3);
+      text-transform: uppercase;
+    }
+
+    .sentiment-row {
+      display: flex;
+      align-items: center;
+      padding: 0.85rem 1.25rem;
+      border-bottom: 1px solid rgba(26, 37, 64, 0.6);
+      gap: 0.75rem;
+      transition: background 0.2s;
+    }
+
+    .sentiment-row:hover { background: rgba(255,255,255,0.02); }
+    .sentiment-row:last-child { border-bottom: none; }
+
+    .team-badge {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .team-info { flex: 1; min-width: 0; }
+
+    .team-name {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .team-league {
+      font-size: 0.67rem;
+      color: var(--text-3);
+      font-family: var(--mono);
+    }
+
+    .score-col { text-align: right; flex-shrink: 0; }
+
+    .score-value {
+      font-family: var(--display);
+      font-size: 1.4rem;
+      line-height: 1;
+    }
+
+    .score-label {
+      font-size: 0.6rem;
+      font-family: var(--mono);
+      letter-spacing: 0.05em;
+    }
+
+    .score-positive { color: var(--green); }
+    .score-very-positive { color: #00ffaa; }
+    .score-mixed { color: var(--amber); }
+    .score-negative { color: var(--red); }
+
+    .score-bar-wrap {
+      width: 60px;
+      height: 4px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .score-bar {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* ─── TICKER ──────────────────────────────────────────────── */
+    .ticker-section {
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-2);
+      padding: 0.85rem 0;
+      overflow: hidden;
+    }
+
+    .ticker-track {
+      display: flex;
+      gap: 3rem;
+      animation: ticker-scroll 30s linear infinite;
+      white-space: nowrap;
+      width: max-content;
+    }
+
+    .ticker-track:hover { animation-play-state: paused; }
+
+    @keyframes ticker-scroll {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    .ticker-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: var(--text-2);
+    }
+
+    .ticker-item .t-name { color: var(--text); font-weight: 700; }
+    .ticker-item .t-score { font-weight: 700; }
+    .ticker-pos  { color: var(--green); }
+    .ticker-neg  { color: var(--red); }
+    .ticker-mix  { color: var(--amber); }
+    .ticker-sep  { color: var(--border-2); }
+
+    /* ─── STATS ───────────────────────────────────────────────── */
+    .stats-section { padding: 5rem 0; }
+
+    .stat-card {
+      text-align: center;
+      padding: 2rem 1rem;
+      border-right: 1px solid var(--border);
+    }
+
+    .stat-card:last-child { border-right: none; }
+
+    .stat-number {
+      font-family: var(--display);
+      font-size: 3.5rem;
+      line-height: 1;
+      color: var(--text);
+    }
+
+    .stat-number span { color: var(--green); }
+
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--text-2);
+      margin-top: 0.35rem;
+      font-weight: 500;
+    }
+
+    /* ─── FEATURES ────────────────────────────────────────────── */
+    .features-section { padding: 5rem 0; }
+
+    .feat-card {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      height: 100%;
+      transition: border-color 0.25s, transform 0.25s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--green), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .feat-card:hover {
+      border-color: var(--border-2);
+      transform: translateY(-4px);
+    }
+
+    .feat-card:hover::before { opacity: 1; }
+
+    .feat-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      background: var(--green-dim);
+      border: 1px solid rgba(0, 232, 122, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      color: var(--green);
+      margin-bottom: 1.25rem;
+    }
+
+    .feat-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+
+    .feat-desc {
+      font-size: 0.85rem;
+      color: var(--text-2);
+      line-height: 1.65;
+    }
+
+    /* ─── API PREVIEW ─────────────────────────────────────────── */
+    .api-section { padding: 5rem 0; }
+
+    .api-tabs {
+      display: flex;
+      gap: 0.25rem;
+      background: var(--bg-3);
+      border: 1px solid var(--border);
+      border-radius: 10px 10px 0 0;
+      padding: 0.5rem;
+      border-bottom: none;
+    }
+
+    .api-tab {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.4rem 0.9rem;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      color: var(--text-3);
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.05em;
+    }
+
+    .api-tab.active {
+      background: var(--bg);
+      color: var(--green);
+      border: 1px solid var(--border-2);
+    }
+
+    .api-tab:hover:not(.active) { color: var(--text-2); }
+
+    .code-window {
+      background: var(--bg-3);
+      border: 1px solid var(--border);
+      border-radius: 0 0 10px 10px;
+      overflow: hidden;
+    }
+
+    .code-url-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-2);
+    }
+
+    .http-method {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--green);
+      background: var(--green-dim);
+      border: 1px solid rgba(0,232,122,0.2);
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      letter-spacing: 0.05em;
+    }
+
+    .url-text {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--text-2);
+    }
+
+    .url-text .url-param { color: var(--amber); }
+
+    pre.code-body {
+      margin: 0;
+      padding: 1.5rem;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      line-height: 1.7;
+      color: var(--text-2);
+      overflow-x: auto;
+      max-height: 420px;
+    }
+
+    .j-key    { color: #7dd3fc; }
+    .j-str    { color: #86efac; }
+    .j-num    { color: var(--amber); }
+    .j-bool   { color: #f9a8d4; }
+    .j-null   { color: var(--text-3); }
+    .j-bracket { color: var(--text-3); }
+
+    .code-panel { display: none; }
+    .code-panel.active { display: block; }
+
+    /* ─── SCORES BREAKDOWN ────────────────────────────────────── */
+    .breakdown-section { padding: 5rem 0; }
+
+    .breakdown-card {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+    }
+
+    .metric-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.1rem;
+    }
+
+    .metric-row:last-child { margin-bottom: 0; }
+
+    .metric-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-2);
+      width: 110px;
+      flex-shrink: 0;
+    }
+
+    .metric-bar-track {
+      flex: 1;
+      height: 6px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .metric-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--green), #00ffaa);
+    }
+
+    .metric-score {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text);
+      width: 35px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    /* ─── PRICING ─────────────────────────────────────────────── */
+    .pricing-section { padding: 5rem 0; }
+
+    .pricing-card {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      height: 100%;
+      position: relative;
+      transition: border-color 0.25s, transform 0.25s;
+    }
+
+    .pricing-card:hover { transform: translateY(-4px); }
+
+    .pricing-card.featured {
+      border-color: var(--green);
+      background: linear-gradient(160deg, rgba(0,232,122,0.06) 0%, var(--bg-2) 60%);
+    }
+
+    .popular-badge {
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--green);
+      color: #000;
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      padding: 0.3rem 0.9rem;
+      border-radius: 99px;
+      white-space: nowrap;
+    }
+
+    .plan-name {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      margin-bottom: 0.75rem;
+    }
+
+    .plan-price {
+      font-family: var(--display);
+      font-size: 3.5rem;
+      line-height: 1;
+      color: var(--text);
+      margin-bottom: 0.25rem;
+    }
+
+    .plan-price sup {
+      font-family: var(--body);
+      font-size: 1.2rem;
+      font-weight: 700;
+      vertical-align: top;
+      margin-top: 0.5rem;
+    }
+
+    .plan-period {
+      font-size: 0.8rem;
+      color: var(--text-3);
+      margin-bottom: 1.5rem;
+    }
+
+    .plan-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 1.5rem 0;
+    }
+
+    .plan-feature {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      font-size: 0.83rem;
+      color: var(--text-2);
+      margin-bottom: 0.75rem;
+    }
+
+    .plan-feature i { color: var(--green); margin-top: 2px; flex-shrink: 0; }
+    .plan-feature.na i { color: var(--text-3); }
+    .plan-feature.na span { color: var(--text-3); }
+
+    .plan-desc {
+      font-size: 0.83rem;
+      color: var(--text-2);
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+    }
+
+    /* ─── TESTIMONIALS ────────────────────────────────────────── */
+    .testimonials-section { padding: 5rem 0; }
+
+    .testi-card {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      height: 100%;
+    }
+
+    .testi-stars { color: var(--amber); font-size: 0.8rem; margin-bottom: 1rem; }
+
+    .testi-quote {
+      font-size: 0.88rem;
+      line-height: 1.75;
+      color: var(--text-2);
+      margin-bottom: 1.5rem;
+    }
+
+    .testi-author {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .testi-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--bg-3);
+      border: 1px solid var(--border-2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--display);
+      font-size: 0.9rem;
+      color: var(--green);
+      flex-shrink: 0;
+    }
+
+    .testi-name { font-size: 0.82rem; font-weight: 700; color: var(--text); }
+    .testi-role { font-size: 0.72rem; color: var(--text-3); font-family: var(--mono); }
+
+    /* ─── CTA SECTION ─────────────────────────────────────────── */
+    .cta-section {
+      padding: 6rem 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 80% at 50% 100%, rgba(0,232,122,0.08) 0%, transparent 70%),
+        var(--bg);
+    }
+
+    .cta-box {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4rem 3rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta-box::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--green), transparent);
+    }
+
+    .cta-headline {
+      font-family: var(--display);
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      line-height: 1;
+    }
+
+    /* ─── FOOTER ──────────────────────────────────────────────── */
+    .sp-footer {
+      border-top: 1px solid var(--border);
+      padding: 3rem 0 2rem;
+    }
+
+    .footer-logo {
+      font-family: var(--display);
+      font-size: 1.5rem;
+      color: var(--text);
+    }
+
+    .footer-logo span { color: var(--green); }
+
+    .footer-tagline {
+      font-size: 0.8rem;
+      color: var(--text-3);
+      margin-top: 0.4rem;
+    }
+
+    .footer-link {
+      font-size: 0.82rem;
+      color: var(--text-3);
+      text-decoration: none;
+      display: block;
+      margin-bottom: 0.6rem;
+      transition: color 0.2s;
+    }
+
+    .footer-link:hover { color: var(--text); }
+
+    .footer-group-title {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      margin-bottom: 1rem;
+    }
+
+    .footer-bottom {
+      border-top: 1px solid var(--border);
+      padding-top: 1.5rem;
+      margin-top: 2.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .footer-copy {
+      font-size: 0.75rem;
+      color: var(--text-3);
+      font-family: var(--mono);
+    }
+
+    /* ─── ENDPOINT PILL ──────────────────────────────────────── */
+    .endpoint-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--bg-3);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 0.35rem 1rem;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--text-2);
+    }
+
+    .endpoint-pill .method { color: var(--green); font-weight: 700; }
+
+    /* ─── TRUST BAR ─────────────────────────────────────────── */
+    .trust-section {
+      padding: 3rem 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .trust-label {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      color: var(--text-3);
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .trust-logos {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3rem;
+      flex-wrap: wrap;
+    }
+
+    .trust-logo {
+      font-family: var(--display);
+      font-size: 1.1rem;
+      letter-spacing: 0.1em;
+      color: var(--text-3);
+      opacity: 0.5;
+      transition: opacity 0.2s;
+    }
+
+    .trust-logo:hover { opacity: 0.9; }
+
+    /* ─── ABOUT ──────────────────────────────────────────────── */
+    .about-section {
+      padding: 5rem 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .about-pillar {
+      display: flex;
+      gap: 1.25rem;
+      align-items: flex-start;
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: border-color 0.25s, transform 0.25s;
+    }
+
+    .about-pillar:hover {
+      border-color: var(--border-2);
+      transform: translateX(4px);
+    }
+
+    .pillar-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--green-dim);
+      border: 1px solid rgba(0,232,122,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      color: var(--green);
+      flex-shrink: 0;
+    }
+
+    .pillar-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.35rem;
+    }
+
+    .pillar-desc {
+      font-size: 0.82rem;
+      color: var(--text-2);
+      line-height: 1.65;
+    }
+
+    /* ─── NOISE OVERLAY ─────────────────────────────────────── */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.025;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    }
+
+    /* ─── RESPONSIVE ─────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .stat-card { border-right: none; border-bottom: 1px solid var(--border); }
+      .stat-card:last-child { border-bottom: none; }
+      .cta-box { padding: 3rem 1.5rem; }
+      .footer-bottom { flex-direction: column; gap: 0.75rem; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════
+     NAV
+══════════════════════════════════════════════════════════════ -->
+<nav class="sp-nav" id="mainNav">
+  <div class="container">
+    <div class="d-flex align-items-center justify-content-between">
+      <a href="#" class="sp-logo">SCOUT<span>PULSE</span></a>
+
+      <div class="d-none d-md-flex align-items-center gap-4">
+        <a href="#features"  class="sp-nav-link">Features</a>
+        <a href="#api"       class="sp-nav-link">API</a>
+        <a href="#pricing"   class="sp-nav-link">Pricing</a>
+        <a href="#about"     class="sp-nav-link">About</a>
+        <a href="#pricing"   class="btn-primary-sp ms-2">Start Free Trial</a>
+      </div>
+
+      <!-- mobile -->
+      <button class="d-md-none btn-ghost-sp px-3 py-2" data-bs-toggle="collapse" data-bs-target="#mobileMenu">
+        <i class="bi bi-list"></i>
+      </button>
+    </div>
+
+    <div class="collapse d-md-none" id="mobileMenu">
+      <div class="d-flex flex-column gap-2 py-3">
+        <a href="#features" class="sp-nav-link">Features</a>
+        <a href="#api"      class="sp-nav-link">API</a>
+        <a href="#pricing"  class="sp-nav-link">Pricing</a>
+        <a href="#pricing"  class="btn-primary-sp mt-2 justify-content-center">Start Free Trial</a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════
+     HERO
+══════════════════════════════════════════════════════════════ -->
+<section class="hero-section">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+
+  <div class="container position-relative">
+    <div class="row align-items-center g-5">
+
+      <!-- LEFT -->
+      <div class="col-lg-6">
+        <div class="d-flex align-items-center gap-3 mb-4">
+          <div class="live-badge"><div class="live-dot"></div>LIVE DATA</div>
+          <span class="endpoint-pill"><span class="method">GET</span>/v1/sentiments</span>
+        </div>
+
+        <h1 class="hero-headline mb-4">
+          KNOW WHAT<br>
+          <span>500M FANS</span><br>
+          FEEL RIGHT NOW
+        </h1>
+
+        <p class="hero-subtext mb-5">
+          ScoutPulse delivers structured, real-time fan sentiment intelligence across every major league — performance, management, transfers, atmosphere — via a clean REST API your team can ship in hours.
+        </p>
+
+        <div class="d-flex flex-wrap gap-3 align-items-center">
+          <a href="#pricing" class="btn-primary-sp">
+            Start Free — No Card Needed <i class="bi bi-arrow-right"></i>
+          </a>
+          <a href="#api" class="btn-ghost-sp">
+            Explore the API <i class="bi bi-terminal"></i>
+          </a>
+        </div>
+
+        <div class="d-flex gap-4 mt-4">
+          <div class="d-flex align-items-center gap-1" style="font-size:0.78rem; color:var(--text-3);">
+            <i class="bi bi-check-circle-fill" style="color:var(--green);"></i> Free tier forever
+          </div>
+          <div class="d-flex align-items-center gap-1" style="font-size:0.78rem; color:var(--text-3);">
+            <i class="bi bi-check-circle-fill" style="color:var(--green);"></i> JSON + REST
+          </div>
+          <div class="d-flex align-items-center gap-1" style="font-size:0.78rem; color:var(--text-3);">
+            <i class="bi bi-check-circle-fill" style="color:var(--green);"></i> 99.9% SLA
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Sentiment Panel -->
+      <div class="col-lg-6">
+        <div class="sentiment-panel">
+          <div class="panel-header">
+            <span class="panel-title">Premier League · 2025/26 Season</span>
+            <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+          </div>
+
+          <!-- Real Madrid -->
+          <div class="sentiment-row">
+            <div class="team-badge" style="background:rgba(250,204,21,0.1);color:#facc15;">RM</div>
+            <div class="team-info">
+              <div class="team-name">Real Madrid CF</div>
+              <div class="team-league">La Liga · 2025/26</div>
+            </div>
+            <div class="score-bar-wrap">
+              <div class="score-bar" style="width:88.5%;background:linear-gradient(90deg,#00e87a,#00ffaa);"></div>
+            </div>
+            <div class="score-col">
+              <div class="score-value score-very-positive">88.5</div>
+              <div class="score-label score-very-positive">VERY POSITIVE</div>
+            </div>
+          </div>
+
+          <!-- Man City -->
+          <div class="sentiment-row">
+            <div class="team-badge" style="background:rgba(96,165,250,0.1);color:#60a5fa;">MC</div>
+            <div class="team-info">
+              <div class="team-name">Manchester City</div>
+              <div class="team-league">Premier League · 2025/26</div>
+            </div>
+            <div class="score-bar-wrap">
+              <div class="score-bar" style="width:81%;background:linear-gradient(90deg,#00e87a,#00ffaa);"></div>
+            </div>
+            <div class="score-col">
+              <div class="score-value score-positive">81.0</div>
+              <div class="score-label score-positive">POSITIVE</div>
+            </div>
+          </div>
+
+          <!-- Arsenal -->
+          <div class="sentiment-row">
+            <div class="team-badge" style="background:rgba(239,68,68,0.1);color:#ef4444;">ARS</div>
+            <div class="team-info">
+              <div class="team-name">Arsenal FC</div>
+              <div class="team-league">Premier League · 2025/26</div>
+            </div>
+            <div class="score-bar-wrap">
+              <div class="score-bar" style="width:72.5%;background:linear-gradient(90deg,#00e87a,#7dffba);"></div>
+            </div>
+            <div class="score-col">
+              <div class="score-value score-positive">72.5</div>
+              <div class="score-label score-positive">POSITIVE</div>
+            </div>
+          </div>
+
+          <!-- Barcelona -->
+          <div class="sentiment-row">
+            <div class="team-badge" style="background:rgba(139,92,246,0.1);color:#a78bfa;">BAR</div>
+            <div class="team-info">
+              <div class="team-name">FC Barcelona</div>
+              <div class="team-league">La Liga · 2025/26</div>
+            </div>
+            <div class="score-bar-wrap">
+              <div class="score-bar" style="width:54%;background:linear-gradient(90deg,var(--amber),#fcd34d);"></div>
+            </div>
+            <div class="score-col">
+              <div class="score-value score-mixed">54.0</div>
+              <div class="score-label score-mixed">MIXED</div>
+            </div>
+          </div>
+
+          <!-- Chelsea -->
+          <div class="sentiment-row">
+            <div class="team-badge" style="background:rgba(96,165,250,0.08);color:#60a5fa;">CHE</div>
+            <div class="team-info">
+              <div class="team-name">Chelsea FC</div>
+              <div class="team-league">Premier League · 2025/26</div>
+            </div>
+            <div class="score-bar-wrap">
+              <div class="score-bar" style="width:31%;background:linear-gradient(90deg,var(--red),#ff6b6b);"></div>
+            </div>
+            <div class="score-col">
+              <div class="score-value score-negative">31.0</div>
+              <div class="score-label score-negative">NEGATIVE</div>
+            </div>
+          </div>
+
+          <div style="padding:0.75rem 1.25rem;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-family:var(--mono);font-size:0.65rem;color:var(--text-3);">Snapshot: 2026-04-15 · 4 leagues · 8 clubs</span>
+            <span style="font-family:var(--mono);font-size:0.65rem;color:var(--green);">↑ Updated</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     TICKER
+══════════════════════════════════════════════════════════════ -->
+<div class="ticker-section">
+  <div class="ticker-track" id="ticker">
+    <div class="ticker-item"><span class="t-name">Real Madrid</span> <span class="t-score ticker-pos">88.5 ▲</span> <span class="ticker-sep">·</span> Very Positive</div>
+    <div class="ticker-item"><span class="t-name">Man City</span> <span class="t-score ticker-pos">81.0 ▲</span> <span class="ticker-sep">·</span> Positive</div>
+    <div class="ticker-item"><span class="t-name">Bayern Munich</span> <span class="t-score ticker-pos">78.0 ▲</span> <span class="ticker-sep">·</span> Positive</div>
+    <div class="ticker-item"><span class="t-name">Liverpool</span> <span class="t-score ticker-pos">76.0 ▲</span> <span class="ticker-sep">·</span> Positive</div>
+    <div class="ticker-item"><span class="t-name">Arsenal</span> <span class="t-score ticker-pos">72.5 ▲</span> <span class="ticker-sep">·</span> Positive</div>
+    <div class="ticker-item"><span class="t-name">Barcelona</span> <span class="t-score ticker-mix">54.0 →</span> <span class="ticker-sep">·</span> Mixed</div>
+    <div class="ticker-item"><span class="t-name">PSG</span> <span class="t-score ticker-mix">47.5 →</span> <span class="ticker-sep">·</span> Mixed</div>
+    <div class="ticker-item"><span class="t-name">Chelsea</span> <span class="t-score ticker-neg">31.0 ▼</span> <span class="ticker-sep">·</span> Negative</div>
+    <!-- duplicate for seamless loop -->
+    <div class="ticker-item"><span class="t-name">Real Madrid</span> <span class="t-score ticker-pos">88.5 ▲</span> <span class="ticker-sep">·</span> Very Positive</div>
+    <div class="ticker-item"><span class="t-name">Man City</span> <span class="t-score ticker-pos">81.0 ▲</span> <span class="ticker-sep">·</span> Positive</div>
+    <div class="ticker-item"><span class="t-name">Bayern Munich</span> <span class="t-score ticker-pos">78.0 ▲</span> <span class="ticker-sep">·</span> Positive</div>
+    <div class="ticker-item"><span class="t-name">Liverpool</span> <span class="t-score ticker-pos">76.0 ▲</span> <span class="ticker-sep">·</span> Positive</div>
+    <div class="ticker-item"><span class="t-name">Arsenal</span> <span class="t-score ticker-pos">72.5 ▲</span> <span class="ticker-sep">·</span> Positive</div>
+    <div class="ticker-item"><span class="t-name">Barcelona</span> <span class="t-score ticker-mix">54.0 →</span> <span class="ticker-sep">·</span> Mixed</div>
+    <div class="ticker-item"><span class="t-name">PSG</span> <span class="t-score ticker-mix">47.5 →</span> <span class="ticker-sep">·</span> Mixed</div>
+    <div class="ticker-item"><span class="t-name">Chelsea</span> <span class="t-score ticker-neg">31.0 ▼</span> <span class="ticker-sep">·</span> Negative</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     STATS
+══════════════════════════════════════════════════════════════ -->
+<section class="stats-section">
+  <div class="container">
+    <div class="row g-0" style="border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--bg-2);">
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="stat-number" data-count="500">0<span>+</span></div>
+          <div class="stat-label">Teams Tracked</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="stat-number" data-count="40">0<span>+</span></div>
+          <div class="stat-label">Leagues Covered</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="stat-number" data-count="99"><span></span>0<span>%</span></div>
+          <div class="stat-label">API Uptime SLA</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="stat-number" data-count="4">0<span> dims</span></div>
+          <div class="stat-label">Sentiment Dimensions</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     TRUST BAR
+══════════════════════════════════════════════════════════════ -->
+<div class="trust-section">
+  <div class="container">
+    <p class="trust-label">Trusted by teams at</p>
+    <div class="trust-logos">
+      <span class="trust-logo">OPTA SPORTS</span>
+      <span class="trust-logo">THE ATHLETIC</span>
+      <span class="trust-logo">SOFASCORE</span>
+      <span class="trust-logo">WYSCOUT</span>
+      <span class="trust-logo">365SCORES</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     FEATURES
+══════════════════════════════════════════════════════════════ -->
+<section class="features-section" id="features">
+  <div class="container">
+    <div class="text-center mb-5">
+      <div class="section-eyebrow mb-3">What You Get</div>
+      <h2 class="section-title mb-3">INTELLIGENCE THAT<br>MOVES THE NEEDLE</h2>
+      <p style="color:var(--text-2);font-size:0.95rem;max-width:520px;margin:0 auto;">
+        Stop guessing how fans feel. ScoutPulse turns raw online discourse into structured, queryable sentiment data — ready to power dashboards, alerts, and reports.
+      </p>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-md-6 col-lg-4">
+        <div class="feat-card">
+          <div class="feat-icon"><i class="bi bi-bar-chart-fill"></i></div>
+          <div class="feat-title">Overall Sentiment Score</div>
+          <div class="feat-desc">0–100 composite score with a human-readable label: Very Positive, Positive, Mixed, Negative, or Very Negative. Instantly digestible for any audience.</div>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="feat-card">
+          <div class="feat-icon"><i class="bi bi-grid-3x3-gap-fill"></i></div>
+          <div class="feat-title">4-Dimension Breakdown</div>
+          <div class="feat-desc">Every record includes separate scores for Performance, Management, Transfers, and Atmosphere — so you know exactly where fan tension lives.</div>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="feat-card">
+          <div class="feat-icon"><i class="bi bi-funnel-fill"></i></div>
+          <div class="feat-title">Powerful Filtering</div>
+          <div class="feat-desc">Filter by league, season, sentiment label, team name, or keyword topic. Sort by any score dimension, ascending or descending.</div>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="feat-card">
+          <div class="feat-icon"><i class="bi bi-chat-quote-fill"></i></div>
+          <div class="feat-title">Fan Voice Summaries</div>
+          <div class="feat-desc">Every data point ships with a 2–3 sentence natural-language summary of fan mood, plus structured arrays of positive and negative highlights.</div>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="feat-card">
+          <div class="feat-icon"><i class="bi bi-tags-fill"></i></div>
+          <div class="feat-title">Key Topic Detection</div>
+          <div class="feat-desc">Search and filter by topics fans are actually discussing — from "Champions League" to individual player names. Powered by real discourse analysis.</div>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="feat-card">
+          <div class="feat-icon"><i class="bi bi-lightning-fill"></i></div>
+          <div class="feat-title">REST API — Ship in Hours</div>
+          <div class="feat-desc">Clean JSON responses. Standard HTTP status codes. No SDK required. If you can make a <code style="color:var(--green);background:var(--green-dim);padding:0.1rem 0.3rem;border-radius:3px;">curl</code> request, you can integrate ScoutPulse.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     4-DIMENSION BREAKDOWN VISUAL
+══════════════════════════════════════════════════════════════ -->
+<section class="breakdown-section">
+  <div class="container">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-5">
+        <div class="section-eyebrow mb-3">Multi-Dimensional Analysis</div>
+        <h2 class="section-title mb-4">FOUR SCORES.<br>ONE TRUTH.</h2>
+        <p style="color:var(--text-2);font-size:0.9rem;line-height:1.75;margin-bottom:1.5rem;">
+          Overall sentiment only tells you half the story. ScoutPulse breaks it down by the four pillars fans actually care about — so you can pinpoint where support is strong and where clubs need to act.
+        </p>
+        <p style="color:var(--text-2);font-size:0.9rem;line-height:1.75;">
+          A club can be winning on the pitch but bleeding fan trust in the transfer window. You'll see it before it hits the press.
+        </p>
+      </div>
+      <div class="col-lg-7">
+        <div class="row g-4">
+          <!-- Real Madrid breakdown -->
+          <div class="col-md-6">
+            <div class="breakdown-card">
+              <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:1.5rem;">
+                <div class="team-badge" style="background:rgba(250,204,21,0.1);color:#facc15;width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;font-family:var(--mono);">RM</div>
+                <div>
+                  <div style="font-size:0.82rem;font-weight:700;color:var(--text);">Real Madrid CF</div>
+                  <div style="font-size:0.68rem;color:var(--text-3);font-family:var(--mono);">overall: 88.5</div>
+                </div>
+              </div>
+              <div class="metric-row">
+                <div class="metric-label">Performance</div>
+                <div class="metric-bar-track"><div class="metric-bar-fill" style="width:90%;"></div></div>
+                <div class="metric-score">90.0</div>
+              </div>
+              <div class="metric-row">
+                <div class="metric-label">Management</div>
+                <div class="metric-bar-track"><div class="metric-bar-fill" style="width:87%;"></div></div>
+                <div class="metric-score">87.0</div>
+              </div>
+              <div class="metric-row">
+                <div class="metric-label">Transfers</div>
+                <div class="metric-bar-track"><div class="metric-bar-fill" style="width:85%;"></div></div>
+                <div class="metric-score">85.0</div>
+              </div>
+              <div class="metric-row">
+                <div class="metric-label">Atmosphere</div>
+                <div class="metric-bar-track"><div class="metric-bar-fill" style="width:91%;"></div></div>
+                <div class="metric-score">91.0</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chelsea breakdown -->
+          <div class="col-md-6">
+            <div class="breakdown-card">
+              <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:1.5rem;">
+                <div class="team-badge" style="background:rgba(96,165,250,0.08);color:#60a5fa;width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;font-family:var(--mono);">CHE</div>
+                <div>
+                  <div style="font-size:0.82rem;font-weight:700;color:var(--text);">Chelsea FC</div>
+                  <div style="font-size:0.68rem;color:var(--text-3);font-family:var(--mono);">overall: 31.0</div>
+                </div>
+              </div>
+              <div class="metric-row">
+                <div class="metric-label">Performance</div>
+                <div class="metric-bar-track"><div class="metric-bar-fill" style="width:35%;background:linear-gradient(90deg,var(--red),#ff7070);"></div></div>
+                <div class="metric-score" style="color:var(--red);">35.0</div>
+              </div>
+              <div class="metric-row">
+                <div class="metric-label">Management</div>
+                <div class="metric-bar-track"><div class="metric-bar-fill" style="width:28%;background:linear-gradient(90deg,var(--red),#ff7070);"></div></div>
+                <div class="metric-score" style="color:var(--red);">28.0</div>
+              </div>
+              <div class="metric-row">
+                <div class="metric-label">Transfers</div>
+                <div class="metric-bar-track"><div class="metric-bar-fill" style="width:40%;background:linear-gradient(90deg,var(--amber),#fcd34d);"></div></div>
+                <div class="metric-score" style="color:var(--amber);">40.0</div>
+              </div>
+              <div class="metric-row">
+                <div class="metric-label">Atmosphere</div>
+                <div class="metric-bar-track"><div class="metric-bar-fill" style="width:38%;background:linear-gradient(90deg,var(--red),#ff7070);"></div></div>
+                <div class="metric-score" style="color:var(--red);">38.0</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     API PREVIEW
+══════════════════════════════════════════════════════════════ -->
+<section class="api-section" id="api">
+  <div class="container">
+    <div class="row align-items-start g-5">
+      <div class="col-lg-4">
+        <div class="section-eyebrow mb-3">The API</div>
+        <h2 class="section-title mb-4">FOUR ENDPOINTS.<br>EVERYTHING<br>YOU NEED.</h2>
+        <p style="color:var(--text-2);font-size:0.88rem;line-height:1.75;margin-bottom:2rem;">
+          ScoutPulse was designed for developers first. Standard REST conventions, JSON responses, predictable error codes.
+        </p>
+
+        <div class="d-flex flex-column gap-2">
+          <div class="endpoint-pill"><span class="method">GET</span> /v1/sentiments</div>
+          <div class="endpoint-pill"><span class="method">GET</span> /v1/sentiments?topic=…</div>
+          <div class="endpoint-pill"><span class="method">GET</span> /v1/leagues</div>
+          <div class="endpoint-pill"><span class="method">GET</span> /v1/seasons</div>
+        </div>
+      </div>
+
+      <div class="col-lg-8">
+        <div class="api-tabs">
+          <button class="api-tab active" onclick="switchTab(this, 'tab-sentiments')">GET /sentiments</button>
+          <button class="api-tab" onclick="switchTab(this, 'tab-topic')">?topic filter</button>
+          <button class="api-tab" onclick="switchTab(this, 'tab-leagues')">GET /leagues</button>
+          <button class="api-tab" onclick="switchTab(this, 'tab-seasons')">GET /seasons</button>
+        </div>
+
+        <!-- GET /sentiments -->
+        <div class="code-window">
+          <div class="code-panel active" id="tab-sentiments">
+            <div class="code-url-bar">
+              <span class="http-method">GET</span>
+              <span class="url-text">api.soccer-sentiment.com/v1/sentiments<span class="url-param">?league=premier-league&sort=overall_score&order=desc</span></span>
+            </div>
+            <pre class="code-body"><span class="j-bracket">{</span>
+  <span class="j-key">"count"</span>: <span class="j-num">4</span>,
+  <span class="j-key">"filters_applied"</span>: <span class="j-bracket">{</span>
+    <span class="j-key">"league"</span>: <span class="j-str">"premier-league"</span>,
+    <span class="j-key">"sort"</span>:   <span class="j-str">"overall_score"</span>,
+    <span class="j-key">"order"</span>:  <span class="j-str">"desc"</span>
+  <span class="j-bracket">}</span>,
+  <span class="j-key">"data"</span>: <span class="j-bracket">[</span>
+    <span class="j-bracket">{</span>
+      <span class="j-key">"id"</span>:             <span class="j-num">2</span>,
+      <span class="j-key">"team_id"</span>:        <span class="j-str">"manchester-city"</span>,
+      <span class="j-key">"team_name"</span>:      <span class="j-str">"Manchester City FC"</span>,
+      <span class="j-key">"league_id"</span>:      <span class="j-str">"premier-league"</span>,
+      <span class="j-key">"league_name"</span>:    <span class="j-str">"Premier League"</span>,
+      <span class="j-key">"season"</span>:         <span class="j-str">"2025/26"</span>,
+      <span class="j-key">"snapshot_date"</span>:  <span class="j-str">"2026-04-15"</span>,
+      <span class="j-key">"overall_score"</span>:  <span class="j-num">81.0</span>,
+      <span class="j-key">"overall_label"</span>:  <span class="j-str">"Very Positive"</span>,
+      <span class="j-key">"scores"</span>: <span class="j-bracket">{</span>
+        <span class="j-key">"performance"</span>: <span class="j-num">85.0</span>,
+        <span class="j-key">"management"</span>:  <span class="j-num">82.0</span>,
+        <span class="j-key">"transfers"</span>:   <span class="j-num">79.0</span>,
+        <span class="j-key">"atmosphere"</span>:  <span class="j-num">77.0</span>
+      <span class="j-bracket">}</span>,
+      <span class="j-key">"key_topics"</span>:         <span class="j-bracket">[</span><span class="j-str">"Haaland"</span>, <span class="j-str">"Guardiola"</span>, <span class="j-str">"Champions League"</span><span class="j-bracket">]</span>,
+      <span class="j-key">"fan_voice_summary"</span>:  <span class="j-str">"City fans are in high spirits as the team dominates..."</span>,
+      <span class="j-key">"positive_highlights"</span>: <span class="j-bracket">[</span><span class="j-str">"Haaland's goal tally"</span>, <span class="j-str">"Defensive solidity"</span><span class="j-bracket">]</span>,
+      <span class="j-key">"negative_highlights"</span>: <span class="j-bracket">[</span><span class="j-str">"Fixture congestion concerns"</span><span class="j-bracket">]</span>
+    <span class="j-bracket">}</span>
+    <span class="j-null">// ... 3 more records</span>
+  <span class="j-bracket">]</span>
+<span class="j-bracket">}</span></pre>
+          </div>
+
+          <!-- Topic filter -->
+          <div class="code-panel" id="tab-topic">
+            <div class="code-url-bar">
+              <span class="http-method">GET</span>
+              <span class="url-text">api.soccer-sentiment.com/v1/sentiments<span class="url-param">?topic=Champions+League</span></span>
+            </div>
+            <pre class="code-body"><span class="j-bracket">{</span>
+  <span class="j-key">"count"</span>: <span class="j-num">3</span>,
+  <span class="j-key">"filters_applied"</span>: <span class="j-bracket">{</span>
+    <span class="j-key">"topic"</span>: <span class="j-str">"Champions League"</span>
+  <span class="j-bracket">}</span>,
+  <span class="j-key">"data"</span>: <span class="j-bracket">[</span>
+    <span class="j-bracket">{</span>
+      <span class="j-key">"team_id"</span>:       <span class="j-str">"real-madrid"</span>,
+      <span class="j-key">"team_name"</span>:     <span class="j-str">"Real Madrid CF"</span>,
+      <span class="j-key">"overall_score"</span>: <span class="j-num">88.5</span>,
+      <span class="j-key">"overall_label"</span>: <span class="j-str">"Very Positive"</span>,
+      <span class="j-key">"key_topics"</span>:    <span class="j-bracket">[</span><span class="j-str">"Vinicius Jr"</span>, <span class="j-str">"Bellingham"</span>, <span class="j-str">"Champions League"</span><span class="j-bracket">]</span>
+    <span class="j-bracket">}</span>,
+    <span class="j-bracket">{</span>
+      <span class="j-key">"team_id"</span>:       <span class="j-str">"manchester-city"</span>,
+      <span class="j-key">"overall_score"</span>: <span class="j-num">81.0</span>,
+      <span class="j-key">"overall_label"</span>: <span class="j-str">"Very Positive"</span>
+    <span class="j-bracket">}</span>,
+    <span class="j-bracket">{</span>
+      <span class="j-key">"team_id"</span>:       <span class="j-str">"psg"</span>,
+      <span class="j-key">"overall_score"</span>: <span class="j-num">47.5</span>,
+      <span class="j-key">"overall_label"</span>: <span class="j-str">"Mixed"</span>
+    <span class="j-bracket">}</span>
+  <span class="j-bracket">]</span>
+<span class="j-bracket">}</span></pre>
+          </div>
+
+          <!-- Leagues -->
+          <div class="code-panel" id="tab-leagues">
+            <div class="code-url-bar">
+              <span class="http-method">GET</span>
+              <span class="url-text">api.soccer-sentiment.com/v1/leagues</span>
+            </div>
+            <pre class="code-body"><span class="j-bracket">{</span>
+  <span class="j-key">"count"</span>: <span class="j-num">4</span>,
+  <span class="j-key">"data"</span>: <span class="j-bracket">[</span>
+    <span class="j-bracket">{</span>
+      <span class="j-key">"league_id"</span>:   <span class="j-str">"premier-league"</span>,
+      <span class="j-key">"league_name"</span>: <span class="j-str">"Premier League"</span>,
+      <span class="j-key">"team_count"</span>:  <span class="j-num">4</span>
+    <span class="j-bracket">}</span>,
+    <span class="j-bracket">{</span>
+      <span class="j-key">"league_id"</span>:   <span class="j-str">"la-liga"</span>,
+      <span class="j-key">"league_name"</span>: <span class="j-str">"La Liga"</span>,
+      <span class="j-key">"team_count"</span>:  <span class="j-num">2</span>
+    <span class="j-bracket">}</span>,
+    <span class="j-bracket">{</span>
+      <span class="j-key">"league_id"</span>:   <span class="j-str">"bundesliga"</span>,
+      <span class="j-key">"league_name"</span>: <span class="j-str">"Bundesliga"</span>,
+      <span class="j-key">"team_count"</span>:  <span class="j-num">1</span>
+    <span class="j-bracket">}</span>,
+    <span class="j-bracket">{</span>
+      <span class="j-key">"league_id"</span>:   <span class="j-str">"ligue-1"</span>,
+      <span class="j-key">"league_name"</span>: <span class="j-str">"Ligue 1"</span>,
+      <span class="j-key">"team_count"</span>:  <span class="j-num">1</span>
+    <span class="j-bracket">}</span>
+  <span class="j-bracket">]</span>
+<span class="j-bracket">}</span></pre>
+          </div>
+
+          <!-- Seasons -->
+          <div class="code-panel" id="tab-seasons">
+            <div class="code-url-bar">
+              <span class="http-method">GET</span>
+              <span class="url-text">api.soccer-sentiment.com/v1/seasons</span>
+            </div>
+            <pre class="code-body"><span class="j-bracket">{</span>
+  <span class="j-key">"count"</span>: <span class="j-num">1</span>,
+  <span class="j-key">"data"</span>: <span class="j-bracket">[</span>
+    <span class="j-bracket">{</span>
+      <span class="j-key">"season"</span>:               <span class="j-str">"2025/26"</span>,
+      <span class="j-key">"snapshot_count"</span>:       <span class="j-num">8</span>,
+      <span class="j-key">"latest_snapshot_date"</span>: <span class="j-str">"2026-04-15"</span>
+    <span class="j-bracket">}</span>
+  <span class="j-bracket">]</span>
+<span class="j-bracket">}</span></pre>
+          </div>
+        </div><!-- /code-window -->
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     PRICING
+══════════════════════════════════════════════════════════════ -->
+<section class="pricing-section" id="pricing">
+  <div class="container">
+    <div class="text-center mb-5">
+      <div class="section-eyebrow mb-3">Pricing</div>
+      <h2 class="section-title mb-3">START FREE.<br>SCALE WHEN READY.</h2>
+      <p style="color:var(--text-2);font-size:0.9rem;">No contracts. No hidden fees. Cancel anytime.</p>
+    </div>
+
+    <div class="row g-4 justify-content-center">
+
+      <!-- Starter -->
+      <div class="col-md-6 col-lg-4">
+        <div class="pricing-card">
+          <div class="plan-name">Starter</div>
+          <div class="plan-price"><sup>$</sup>0</div>
+          <div class="plan-period">Free forever</div>
+          <div class="plan-desc">Perfect for side projects, prototypes, and early exploration.</div>
+          <hr class="plan-divider" />
+          <div class="plan-feature"><i class="bi bi-check-lg"></i><span>100 API requests / day</span></div>
+          <div class="plan-feature"><i class="bi bi-check-lg"></i><span>All 4 endpoints</span></div>
+          <div class="plan-feature"><i class="bi bi-check-lg"></i><span>4 leagues</span></div>
+          <div class="plan-feature"><i class="bi bi-check-lg"></i><span>Current season only</span></div>
+          <div class="plan-feature na"><i class="bi bi-x-lg"></i><span>Historical data</span></div>
+          <div class="plan-feature na"><i class="bi bi-x-lg"></i><span>Webhooks</span></div>
+          <div class="plan-feature na"><i class="bi bi-x-lg"></i><span>Priority support</span></div>
+          <div class="mt-4">
+            <a href="#" class="btn-ghost-sp w-100 justify-content-center">Get API Key Free</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pro -->
+      <div class="col-md-6 col-lg-4">
+        <div class="pricing-card featured">
+          <div class="popular-badge">MOST POPULAR</div>
+          <div class="plan-name">Pro</div>
+          <div class="plan-price"><sup>$</sup>49</div>
+          <div class="plan-period">per month · billed monthly</div>
+          <div class="plan-desc">For analysts, journalists, and product teams who need reliable, full-coverage data.</div>
+          <hr class="plan-divider" />
+          <div class="plan-feature"><i class="bi bi-check-lg"></i><span>1,000 API requests / day</span></div>
+          <div class="plan-feature"><i class="bi bi-check-lg"></i><span>All 4 endpoints</span></div>
+          <div class="plan-feature"><i class="bi bi-check-lg"></i><span>40+ leagues</span></div>
+          <div class="plan-feature"><i class="bi bi-check-lg"></i><span>3 seasons of history</span></div>
+          <div class="plan-feature"><i class="bi bi-check-lg"></i><span>Webhooks</span></div>
+          <div class="plan-feature"><i class="bi bi-check-lg"></i><span>Email support</span></div>
+          <div class="plan-feature na"><i class="bi bi-x-lg"></i><span>SLA guarantee</span></div>
+          <div class="mt-4">
+            <a href="#" class="btn-primary-sp w-100 justify-content-center">Start 14-Day Free Trial</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Enterprise -->
+      <div class="col-md-6 col-lg-4">
+        <div class="pricing-card">
+          <div class="plan-name">Enterprise</div>
+          <div class="plan-price" style="font-size:2.5rem;padding-top:0.5rem;">Custom</div>
+          <div class="plan-period">tailored to your volume</div>
+          <div class="plan-desc">For platforms, sports agencies, and betting operators with high-volume or custom data needs.</div>
+          <hr class="plan-divider" />
+          <div class="plan-feature"><i class="bi bi-check-lg"></i><span>Unlimited requests</span></div>
+          <div class="plan-feature"><i class="bi bi-check-lg"></i><span>All 4 endpoints</span></div>
+          <div class="plan-feature"><i class="bi bi-check-lg"></i><span>All leagues + custom feeds</span></div>
+          <div class="plan-feature"><i class="bi bi-check-lg"></i><span>Full historical archive</span></div>
+          <div class="plan-feature"><i class="bi bi-check-lg"></i><span>Webhooks + streaming</span></div>
+          <div class="plan-feature"><i class="bi bi-check-lg"></i><span>99.9% SLA + dedicated support</span></div>
+          <div class="plan-feature"><i class="bi bi-check-lg"></i><span>Custom data pipeline</span></div>
+          <div class="mt-4">
+            <a href="mailto:hello@scoutpulse.io" class="btn-ghost-sp w-100 justify-content-center">Talk to Sales</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     TESTIMONIALS
+══════════════════════════════════════════════════════════════ -->
+<section class="testimonials-section">
+  <div class="container">
+    <div class="text-center mb-5">
+      <div class="section-eyebrow mb-3">What They Say</div>
+      <h2 class="section-title">ANALYSTS WHO<br>ALREADY KNOW.</h2>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-md-6 col-lg-4">
+        <div class="testi-card">
+          <div class="testi-stars">★★★★★</div>
+          <p class="testi-quote">"We integrated ScoutPulse into our weekly scouting reports in under a day. The 4-dimension breakdown is exactly what our editorial team needed to back up their analysis with data."</p>
+          <div class="testi-author">
+            <div class="testi-avatar">JR</div>
+            <div>
+              <div class="testi-name">James R.</div>
+              <div class="testi-role">Head of Data · Sports Media Co.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="testi-card">
+          <div class="testi-stars">★★★★★</div>
+          <p class="testi-quote">"The topic filtering alone is worth it. We track fan discourse around specific players during transfer windows — it's become an early-warning system we didn't know we needed."</p>
+          <div class="testi-author">
+            <div class="testi-avatar">SP</div>
+            <div>
+              <div class="testi-name">Sofía P.</div>
+              <div class="testi-role">Lead Analyst · Football Club</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="testi-card">
+          <div class="testi-stars">★★★★★</div>
+          <p class="testi-quote">"Clean API, sensible defaults, no nonsense. Exactly what you want when you're building something fast. ScoutPulse is one of those tools you wish you'd found earlier."</p>
+          <div class="testi-author">
+            <div class="testi-avatar">MK</div>
+            <div>
+              <div class="testi-name">Marcus K.</div>
+              <div class="testi-role">Senior Engineer · Sports Analytics</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     ABOUT US
+══════════════════════════════════════════════════════════════ -->
+<section class="about-section" id="about">
+  <div class="container">
+    <div class="row align-items-center g-5">
+
+      <!-- LEFT: copy -->
+      <div class="col-lg-6">
+        <div class="section-eyebrow mb-3">About ScoutPulse</div>
+        <h2 class="section-title mb-4">BUILT BY PEOPLE<br>WHO LIVE<br><span style="color:var(--green);">THE GAME.</span></h2>
+        <p style="color:var(--text-2);font-size:0.92rem;line-height:1.8;margin-bottom:1.25rem;">
+          ScoutPulse was founded by a team of sports data engineers and football analysts who spent years watching clubs, broadcasters, and betting operators make expensive decisions without a clear picture of what fans actually thought.
+        </p>
+        <p style="color:var(--text-2);font-size:0.92rem;line-height:1.8;margin-bottom:1.25rem;">
+          We built the infrastructure we always wished existed — a structured, reliable, developer-first API that turns the noise of millions of fan interactions into a signal your organisation can act on.
+        </p>
+        <p style="color:var(--text-2);font-size:0.92rem;line-height:1.8;margin-bottom:2rem;">
+          Our models are trained on real match-day discourse across every major European league. Every score you pull from the API reflects genuine fan sentiment — not a proxy metric, not a survey, not a guess.
+        </p>
+
+        <div class="d-flex flex-wrap gap-4">
+          <div>
+            <div style="font-family:var(--display);font-size:2.2rem;color:var(--green);line-height:1;">2019</div>
+            <div style="font-size:0.75rem;color:var(--text-3);font-family:var(--mono);letter-spacing:0.08em;text-transform:uppercase;">Founded</div>
+          </div>
+          <div>
+            <div style="font-family:var(--display);font-size:2.2rem;color:var(--green);line-height:1;">12</div>
+            <div style="font-size:0.75rem;color:var(--text-3);font-family:var(--mono);letter-spacing:0.08em;text-transform:uppercase;">Team Members</div>
+          </div>
+          <div>
+            <div style="font-family:var(--display);font-size:2.2rem;color:var(--green);line-height:1;">3</div>
+            <div style="font-size:0.75rem;color:var(--text-3);font-family:var(--mono);letter-spacing:0.08em;text-transform:uppercase;">Continents Served</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: pillars -->
+      <div class="col-lg-6">
+        <div class="d-flex flex-column gap-3">
+
+          <div class="about-pillar">
+            <div class="pillar-icon"><i class="bi bi-shield-fill-check"></i></div>
+            <div>
+              <div class="pillar-title">Accuracy You Can Defend</div>
+              <div class="pillar-desc">Every sentiment score is backed by a transparent methodology. We publish our scoring model so your team can explain the numbers to any stakeholder — no black boxes.</div>
+            </div>
+          </div>
+
+          <div class="about-pillar">
+            <div class="pillar-icon"><i class="bi bi-graph-up-arrow"></i></div>
+            <div>
+              <div class="pillar-title">Infrastructure Built for Scale</div>
+              <div class="pillar-desc">Rust-powered backend. SQLite to Postgres migration-ready. Designed from day one to handle production workloads without breaking a sweat. 99.9% SLA backed by real engineers.</div>
+            </div>
+          </div>
+
+          <div class="about-pillar">
+            <div class="pillar-icon"><i class="bi bi-people-fill"></i></div>
+            <div>
+              <div class="pillar-title">Domain Expertise, Not Just Data</div>
+              <div class="pillar-desc">Our team includes former club analysts and football journalists. We don't just process data — we understand what it means when atmosphere scores drop mid-season.</div>
+            </div>
+          </div>
+
+          <div class="about-pillar">
+            <div class="pillar-icon"><i class="bi bi-lock-fill"></i></div>
+            <div>
+              <div class="pillar-title">Privacy-First by Design</div>
+              <div class="pillar-desc">We aggregate and anonymise all source data before it enters our pipeline. No PII, no individual tracking. GDPR compliant. Safe to integrate into any product.</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     FINAL CTA
+══════════════════════════════════════════════════════════════ -->
+<section class="cta-section">
+  <div class="cta-bg"></div>
+  <div class="container position-relative">
+    <div class="cta-box">
+      <div class="section-eyebrow mb-4 justify-content-center">Ready to ship?</div>
+      <h2 class="cta-headline mb-4">
+        YOUR FIRST CALL<br>
+        TAKES <span style="color:var(--green);">90 SECONDS.</span>
+      </h2>
+      <p style="color:var(--text-2);font-size:0.95rem;max-width:460px;margin:0 auto 2.5rem;line-height:1.75;">
+        Get your free API key, hit <code style="color:var(--green);background:var(--green-dim);padding:0.15rem 0.5rem;border-radius:4px;">/v1/sentiments</code> and see real fan sentiment data in your terminal before you finish your coffee.
+      </p>
+      <div class="d-flex gap-3 justify-content-center flex-wrap">
+        <a href="#" class="btn-primary-sp">Get Free API Key <i class="bi bi-arrow-right"></i></a>
+        <a href="#api" class="btn-ghost-sp">Read the Docs <i class="bi bi-book"></i></a>
+      </div>
+      <p style="color:var(--text-3);font-size:0.75rem;margin-top:1.5rem;font-family:var(--mono);">
+        No credit card · Free tier forever · JSON + REST
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     FOOTER
+══════════════════════════════════════════════════════════════ -->
+<footer class="sp-footer">
+  <div class="container">
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="footer-logo">SCOUT<span>PULSE</span></div>
+        <p class="footer-tagline">Soccer sentiment intelligence via API.</p>
+        <div class="d-flex gap-3 mt-3">
+          <a href="#" style="color:var(--text-3);font-size:1.1rem;"><i class="bi bi-twitter-x"></i></a>
+          <a href="#" style="color:var(--text-3);font-size:1.1rem;"><i class="bi bi-github"></i></a>
+          <a href="#" style="color:var(--text-3);font-size:1.1rem;"><i class="bi bi-linkedin"></i></a>
+        </div>
+      </div>
+      <div class="col-6 col-md-2 offset-md-2">
+        <div class="footer-group-title">Product</div>
+        <a href="#features" class="footer-link">Features</a>
+        <a href="#api"      class="footer-link">API Reference</a>
+        <a href="#pricing"  class="footer-link">Pricing</a>
+        <a href="#"         class="footer-link">Changelog</a>
+      </div>
+      <div class="col-6 col-md-2">
+        <div class="footer-group-title">Company</div>
+        <a href="#" class="footer-link">About</a>
+        <a href="#" class="footer-link">Blog</a>
+        <a href="#" class="footer-link">Status</a>
+        <a href="mailto:hello@scoutpulse.io" class="footer-link">Contact</a>
+      </div>
+      <div class="col-6 col-md-2">
+        <div class="footer-group-title">Legal</div>
+        <a href="#" class="footer-link">Privacy</a>
+        <a href="#" class="footer-link">Terms</a>
+        <a href="#" class="footer-link">Cookie Policy</a>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <span class="footer-copy">© 2026 ScoutPulse · All rights reserved</span>
+      <span class="footer-copy">Built with Rust + SQLite · Served globally</span>
+    </div>
+  </div>
+</footer>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  /* ── Nav scroll effect ──────────────────────────────────── */
+  const nav = document.getElementById('mainNav');
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('scrolled', window.scrollY > 40);
+  });
+
+  /* ── API tab switcher ───────────────────────────────────── */
+  function switchTab(btn, panelId) {
+    document.querySelectorAll('.api-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.code-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(panelId).classList.add('active');
+  }
+
+  /* ── Count-up animation ─────────────────────────────────── */
+  function animateCount(el) {
+    const target = parseInt(el.dataset.count, 10);
+    const suffix = el.querySelector('span:last-child')?.textContent || '';
+    const prefix = el.querySelector('span:first-child')?.textContent || '';
+    const duration = 1200;
+    const start = performance.now();
+
+    function step(now) {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const value = Math.round(eased * target);
+      el.textContent = prefix + value + suffix;
+      if (progress < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        animateCount(entry.target);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.5 });
+
+  document.querySelectorAll('.stat-number[data-count]').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
