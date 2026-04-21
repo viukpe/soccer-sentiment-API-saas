@@ -1,6 +1,26 @@
 # soccer-sentiment-API-saas
 An example on how you can build an mvp saas in a day
 
+## About ScoutPulse
+
+ScoutPulse was founded in 2019 by a team of sports data engineers and football analysts who spent years watching clubs, broadcasters, and betting operators make expensive decisions without a clear picture of what fans actually thought.
+
+We built the infrastructure we always wished existed — a structured, reliable, developer-first API that turns the noise of millions of fan interactions into a signal your organisation can act on.
+
+**Who we are**
+- 12-person team spanning engineering, data science, and football domain expertise
+- Former club analysts, sports journalists, and backend engineers under one roof
+- Serving customers across Europe, North America, and Asia
+
+**What we stand for**
+
+- **Accuracy you can defend** — transparent scoring methodology, no black boxes
+- **Infrastructure built for scale** — Rust-powered backend, 99.9% SLA, production-ready from day one
+- **Domain expertise, not just data** — we understand what it means when atmosphere scores drop mid-season
+- **Privacy-first by design** — all source data is aggregated and anonymised before entering our pipeline; GDPR compliant, no PII
+
+Our models are trained on real match-day discourse across every major European league. Every score returned by the API reflects genuine fan sentiment — not a proxy metric, not a survey, not a guess.
+
 ## API Endpoints
 Soccer Sentiment API — Endpoint Reference
 Base URL
